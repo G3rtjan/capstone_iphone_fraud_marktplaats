@@ -6,7 +6,7 @@ This repo is used for the Capstone Project `iPhone fraud at Marktplaats` within 
 ### iPhone fraud at Marktplaats
 
 Lots of fraudsters at Marktplaats try to sell iPhones, but never actually send them. One of their
-typical strategy is to ask to continue the conversation via Whatsapp/SMS, so that it will not be
+typical strategies is to ask to continue the conversation via Whatsapp/SMS, so that it will not be
 monitored by Marktplaats. In this project you need to do the following:
 
 + Immediately start scraping iPhones listing so that when you start the next step you have 2/3
@@ -24,6 +24,8 @@ once their listings are taken offline. If so, add image hashing to your model.
 ## Project Execution
 
 ### Data Collection
+
+We have build a custom R Package with a marktplaats scraper. The [marktplaats API](https://api.marktplaats.nl/docs/v1/overview.html) is not usable because "Through the API you only have access to your own ads. Ads from other advertisers are not accessible."
 
 #### Functions
 
