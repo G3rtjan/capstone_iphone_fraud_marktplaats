@@ -1,6 +1,7 @@
 .Rproj.user
 .Rproj.user/
 .Rproj
+*.Rproj
 .Rhistory
 .RData
 .html

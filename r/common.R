@@ -98,26 +98,3 @@ check_if_packages_loaded <- function(packages_to_check) {
   }
 }
 
-#' Get adv_id from an adv url
-#' 
-#' \code{get_adv_id} extracts the advertisement id from its url.
-#' 
-#' The function uses a regular expression to extract the advertisement id from 
-#' the advertisement url. The advertisement id starts with either an 'a' (for 
-#' business advertisements) or a 'm' (for private advertisements) and ends with 
-#' 10 digits.
-#' 
-#' @param adv_url String containing the advertisement url, which contains the 
-#'   advertisement id.
-#'   
-#' @return a string object.
-#'   
-#' @export
-#' @examples
-#' 
-#' get_adv_id(adv_url = 'http://www.marktplaats.nl/a/telecommunicatie/mobiele-telefoons-apple-iphone/m1106778417-apple-telefoon-4s.html')
-#' 
-get_adv_id <- function(adv_url) {
-  stringr::str_extract(adv_url,'[am][0-9]{1,10}') %>% 
-    return()
-}
