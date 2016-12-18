@@ -29,14 +29,19 @@ We have build a custom R Package with a marktplaats scraper. The [marktplaats AP
 
 #### How to build the mpscraper docker image
 + In the docker terminal, cd to your local copy of this repo
-+ To build the docker image, run: `docker build 'docker' -t mpscraper`
-+ To check whether the mpscraper docker image is now available, run: `docker images`
-+ To locally run the mpscraper docker image, run: `docker run mpscraper`
-+ To be able to push the mpscraper docker image to Google Cloud you need to tag it first, to link it to our Google project: `docker tag mpscraper eu.gcr.io/polynomial-coda-151914/mpscraper`
-+ To push the mpscraper docker image to Google Cloud, run: `docker -- push eu.gcr.io/polynomial-coda-151914/mpscraper`
-	+ NOTE: If not permitted to push, run 'gcloud docker' in Google Cloud SDK shell to authenticate yourself first
++ To build the docker image, run: 
+	+ `docker build 'docker' -t mpscraper`
++ To check whether the mpscraper docker image is now available, run: 
+	+ `docker images`
++ To locally run the mpscraper docker image, run: 
+	+ `docker run mpscraper`
++ To be able to push the mpscraper docker image to Google Cloud you need to tag it first, to link it to our Google project: 
+	+ `docker tag mpscraper eu.gcr.io/polynomial-coda-151914/mpscraper`
++ To push the mpscraper docker image to Google Cloud, run: 
+	+ `docker -- push eu.gcr.io/polynomial-coda-151914/mpscraper`
+		+ NOTE: If not permitted to push, run 'gcloud docker' in Google Cloud SDK shell to authenticate yourself first
 + You should now be able to see the image in the [Containerregister](https://console.cloud.google.com/kubernetes/images/tags/mpscraper?location=EU&project=polynomial-coda-151914)
-	+ NOTE: You can manually deleter older images in the Containerregister](https://console.cloud.google.com/kubernetes/images/tags/mpscraper?location=EU&project=polynomial-coda-151914)
+		+ NOTE: You can manually deleter older images in the [Containerregister](https://console.cloud.google.com/kubernetes/images/tags/mpscraper?location=EU&project=polynomial-coda-151914)
 
 #### How to run the mpscraper docker image on Google Cloud
 + Login to your [Google Cloud Platform](console.cloud.google.com) dashboard
@@ -49,6 +54,8 @@ We have build a custom R Package with a marktplaats scraper. The [marktplaats AP
 		+ The reason to do this is described [here](https://developers.google.com/identity/protocols/application-default-credentials)
 	+ `kubectl run mpscraper --image=eu.gcr.io/polynomial-coda-151914/mpscraper --port=8080`
 	+ `kubectl expose deployment mpscraper  --type="LoadBalancer"`
-+ To check the status of the container, run: `kubectl get service mpscraper`
++ To check the status of the container, run: 
+	+ `kubectl get service mpscraper`
 + After about a minute, you can check if the container has written data to [Google BigQuery](https://bigquery.cloud.google.com/dataset/polynomial-coda-151914:mplaats_advs)
-+ To remove the container, run: `gcloud container clusters delete mpscraper`
++ To remove the container, run: 
+	+ `gcloud container clusters delete mpscraper`
