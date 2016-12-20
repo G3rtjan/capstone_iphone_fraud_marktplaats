@@ -45,18 +45,20 @@ listed_ads <- list_advertisements(
   advertisement_type = "individuals" #, max_pages = 5 
 )
 
-# Determine which ads to scrape, and scape 'em!
-determine_ads_to_scrape(listed = listed_ads$ad_id, 
-                        ads_seen = open_ads) %>% 
+# Determine which ads to scrape, and scape and upload 'em!
+determine_ads_to_scrape(
+    listed = listed_ads$ad_id, 
+    ads_seen = open_ads
+  ) %>% 
   scrape_ads(
     ads_per_minute = settings$ads_per_minute,
     report_every_nth_scrape = settings$report_every_nth_scrape,
     number_of_tries = settings$number_of_tries
+  ) %>% 
+  upload_ads_to_bigquery(
+    project = settings$project,
+    bq_dataset = settings$bq_dataset,
+    bq_table = settings$bq_table
   )
-
-
-
-# Append it to gooogle bigquery
-
 
 # report log print 
