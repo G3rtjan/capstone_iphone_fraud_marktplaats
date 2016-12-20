@@ -8,6 +8,7 @@
 
 
 #### SETUP ####
+
 library(mpscraper) # If you do not use the docker container, install using devtools::install_github("timvink/mpscraper")
 library(purrr)
 
@@ -29,6 +30,8 @@ settings <- list(
   bq_logs = "logs",
   batch_size = 100
 )
+
+#### Logging ####
 
 log_items <- list(
   start_time = Sys.time()
@@ -62,6 +65,7 @@ scraped_ads <- determine_ads_to_scrape(
     number_of_tries = settings$number_of_tries
   )
 
+# Add log items
 log_items$n_rows_scraped <- nrow(scraped_ads)
 log_items$n_cols_scraped <- ncol(scraped_ads)
 log_items$end_time_scraping <- Sys.time()
@@ -75,12 +79,13 @@ upload_ads_to_bigquery(
   batch_size = settings$batch_size
 )
 
+# Add log items
 log_items$end_time_uploading <- Sys.time()
 log_items$duration_scraping <- log_items$end_time_scraping - log_items$start_time
 log_items$duration_uploading <- log_items$end_time_uploading - log_items$end_time_scraping
 log_items$total_time <- log_items$end_time_uploading - log_items$start_time
 
-# report log print 
+# Upload logs to bigquery
 upload_log_to_bigquery(
   logs = log_items,
   project = settings$project,
