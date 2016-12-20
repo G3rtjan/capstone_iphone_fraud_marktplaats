@@ -21,18 +21,28 @@ settings <- list(
   # mpscraper settings
   ads_per_minute = 50, # limit download rate to prevent being blocked by hammering marktplaats server
   report_every_nth_scrape = 10, # how chatty do you want to be
-  number_of_tries = 3 # in case of connection time-outs
+  number_of_tries = 3, # in case of connection time-outs
+  # BigQuery settings
+  project = "polynomial-coda-151914",
+  bq_dataset <- "mplaats_advs", # TO BE: "mplaats_ads"
+  bq_table <- "ads" # TO BE: "all_ads"
 )
 
+# Initialize bigquery dataset
+initialize_bigquery_dataset(project = settings$project, bq_dataset = settings$bq_dataset,bq_table = settings$bq_table)
 
 # Get all open ads from google bigquery TODO
-open_ads <- get_ads_from_bigquery(method = "open")
+open_ads <- get_ads_from_bigquery(
+  project = settings$project,
+  bq_dataset = settings$bq_dataset,
+  bq_table = settings$bq_table,
+  method = "open"
+)
 
 # Get all currently listed ads from marktplaats
 listed_ads <- list_advertisements(
   url = settings$search_url,
-  advertisement_type = "individuals"
-  #max_pages = 5 
+  advertisement_type = "individuals" #, max_pages = 5 
 )
 
 # Determine which ads to scrape, and scape 'em!
