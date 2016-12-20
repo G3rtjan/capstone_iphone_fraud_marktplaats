@@ -8,8 +8,8 @@
 
 
 #### SETUP ####
-
-library(mpscraper) # If you do not use the docker container, install using devtools::install_github("timvink/mpscraper")
+devtools::install_github("timvink/mpscraper") # not installed in the docker container yet
+library(mpscraper)
 library(purrr)
 
 purrr::walk(list.files("functions", full.names = T), source)
@@ -25,14 +25,13 @@ settings <- list(
   number_of_tries = 3, # in case of connection time-outs
   # BigQuery settings
   project = "polynomial-coda-151914",
-  bq_dataset = "mplaats_advs", # TO BE: "mplaats_ads"
-  bq_table = "ads", # TO BE: "all_ads"
+  bq_dataset = "mplaats_ads", 
+  bq_table = "all_ads",
   bq_logs = "logs",
   batch_size = 100
 )
 
 #### Logging ####
-
 log_items <- list(
   start_time = Sys.time()
 )
@@ -56,7 +55,7 @@ listed_ads <- list_advertisements(
 
 # Determine which ads to scrape, and scrape 'em!
 scraped_ads <- determine_ads_to_scrape(
-    listed = listed_ads$ad_id, 
+    ads_listed = listed_ads$ad_id, 
     ads_seen = open_ads
   ) %>% 
   scrape_ads(
@@ -87,7 +86,7 @@ log_items$total_time <- log_items$end_time_uploading - log_items$start_time
 
 # Upload logs to bigquery
 upload_log_to_bigquery(
-  logs = log_items,
+  logs = data.frame(log_items),
   project = settings$project,
   bq_dataset = settings$bq_dataset,
   bq_table = settings$bq_logs

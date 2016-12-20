@@ -15,9 +15,9 @@ get_ads_from_bigquery <- function(project,bq_dataset,bq_table,method = c("all", 
   }
   
   # Return empty vector if table not exists in dataset
-  if(!exists_table(project, bq_dataset, bq_table)) {
-    print(paste0("BigQuery table '",bq_table,"' does not exist within BigQuery dataset '",bq_dataset,"'"))
-    return(c())
+  if(!bigrquery::exists_table(project, bq_dataset, bq_table)) {
+    print(paste0("BigQuery table '",bq_table,"' does not exist within BigQuery dataset '",bq_dataset,"'. Returning empty vector."))
+    return(character())
   }
   
   # Define query

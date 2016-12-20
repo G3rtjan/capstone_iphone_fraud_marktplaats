@@ -3,13 +3,9 @@
 initialize_bigquery_dataset <- function(project,bq_dataset,bq_table) {
   # Create bq_dataset if not yet existing
   if(!bq_dataset %in% bigrquery::list_datasets(project)) {
-    success <- bigrquery::insert_dataset(project, bq_dataset, description = "Capstone project mpscraper")
-    if(success) {
-      print(paste0("BigQuery dataset '",bq_dataset,"' created succesfully"))
-    } else {
-      stop(paste0("BigQuery dataset '",bq_dataset,"' failed to be created..."))
-    }
+    bigrquery::insert_dataset(project, bq_dataset, description = "Capstone project mpscraper")
+    print(paste0("Success: BigQuery dataset '",bq_dataset,"' created succesfully"))
   } else {
-    print(paste0("BigQuery dataset '",bq_dataset,"' already exists"))
+    print(paste0("Success: BigQuery dataset '",bq_dataset,"' already exists"))
   }
 }

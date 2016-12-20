@@ -14,19 +14,13 @@ upload_ads_to_bigquery <- function(scraped_ads,project,bq_dataset,bq_table,batch
       return()
   }
   
-  successes<- ads %>% 
+  scraped_ads %>% 
     dplyr::mutate(
       nr = 1,
       batch = floor(cumsum(nr)/batch_size) + 1
     ) %>% 
     split(.$batch) %>% 
-    purrr::map_df(upload_batch)
-  
-  # Check success
-  if(all(successes)) {
-    print(paste0("Succesfully uploaded scraped ads to '",bq_table,"' table in '",bq_dataset,"' dataset on BigQuery"))
-  } else {
-    stop(paste0("Failed to upload scraped ads to '",bq_table,"' table in '",bq_dataset,"' dataset on BigQuery"))
-  }
-  
+    purrr::walk(upload_batch)
+
+  invisible()
 }
