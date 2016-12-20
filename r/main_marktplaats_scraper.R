@@ -6,13 +6,23 @@ purrr::walk(list.files("/functions"), source)
 
 # Awesome marktplaats scraper
 settings <- list(
-  search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex"
+  search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
+  # BigQuery settings
+  project = "polynomial-coda-151914",
+  bq_dataset <- "mplaats_advs", # TO BE: "mplaats_ads"
+  bq_table <- "ads" # TO BE: "all_ads"
 )
 
+# Initialize bigquery dataset
+initialize_bigquery_dataset(project = settings$project, bq_dataset = settings$bq_dataset,bq_table = settings$bq_table)
 
 # Get all open ads from google bigquery TODO
-bq_ads <- get_ads_from_bigquery(method = "open")
-
+bq_ads <- get_ads_from_bigquery(
+  project = settings$project,
+  bq_dataset = settings$bq_dataset,
+  bq_table = settings$bq_table,
+  method = "open"
+)
 
 # Get all currently listed ads from marktplaats
 ads <- list_advertisements(
