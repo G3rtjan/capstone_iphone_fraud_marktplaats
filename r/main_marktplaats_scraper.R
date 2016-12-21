@@ -10,7 +10,7 @@
 #### SETUP ####
 devtools::install_github("timvink/mpscraper") # not installed in the docker container yet
 library(mpscraper)
-library(purrr)
+library(magrittr)
 
 purrr::walk(list.files("functions", full.names = T), source)
 try(testthat::test_dir("../tests/testthat/"))
@@ -50,7 +50,7 @@ open_ads <- get_ads_from_bigquery(
 # Get all currently listed ads from marktplaats
 listed_ads <- list_advertisements(
   url = settings$search_url,
-  advertisement_type = "individuals" #, max_pages = 5 
+  advertisement_type = "individuals" #,max_pages = 5 
 )
 
 # Determine which ads to scrape, and scrape 'em!

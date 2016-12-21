@@ -23,33 +23,17 @@ get_ads_from_bigquery <- function(project,bq_dataset,bq_table,method = c("all", 
   # Define query
   query <- sprintf("
     SELECT
-      adv_id
+      ad_id
     FROM
     
       (SELECT 
-        adv_id,
+        ad_id,
         max(closed) as closed
       FROM [%s:%s.%s]
-      GROUP BY adv_id)ads
+      GROUP BY ad_id)ads
     
     %s
   ",project,bq_dataset,bq_table,where_filter)
-  
-  # REMOVE THIS TEMP QUERY
-  query <- sprintf("
-    SELECT
-      adv_id
-    FROM
-    
-      (SELECT 
-        adv_id,
-        max(0) as closed
-      FROM [%s:%s.%s]
-      GROUP BY adv_id) ads
-    
-    %s
-    ",project,bq_dataset,bq_table,where_filter)
-  print('TO DO: DONT FORGET TO REMOVE TEMP QUERY!')
   
   # Query bq_table and return results
   bq_data <- bigrquery::query_exec(
