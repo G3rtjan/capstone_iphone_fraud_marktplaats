@@ -20,15 +20,15 @@ try(testthat::test_dir("../tests/testthat/"))
 settings <- list(
   search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
   # mpscraper settings
-  ads_per_minute = 50, # limit download rate to prevent being blocked by hammering marktplaats server
-  report_every_nth_scrape = 10, # how chatty do you want to be
+  ads_per_minute = 120, # limit download rate to prevent being blocked by hammering marktplaats server
+  report_every_nth_scrape = 100, # how chatty do you want to be
   number_of_tries = 3, # in case of connection time-outs
   # BigQuery settings
   project = "polynomial-coda-151914",
   bq_dataset = "mplaats_ads", 
   bq_table = "all_ads",
   bq_logs = "logs",
-  batch_size = 100
+  batch_size = 1000
 )
 
 #### Logging ####
@@ -50,7 +50,7 @@ open_ads <- get_ads_from_bigquery(
 # Get all currently listed ads from marktplaats
 listed_ads <- list_advertisements(
   url = settings$search_url,
-  advertisement_type = "individuals" #,max_pages = 5 
+  advertisement_type = "individuals" #,max_pages = 3
 )
 
 # Determine which ads to scrape, and scrape 'em!
@@ -78,11 +78,13 @@ upload_ads_to_bigquery(
   batch_size = settings$batch_size
 )
 
+duration_in_mins <- function(start,end) paste0(round(as.numeric(difftime(start,end,units="mins")),1),' minutes')
+
 # Add log items
 log_items$end_time_uploading <- Sys.time()
-log_items$duration_scraping <- log_items$end_time_scraping - log_items$start_time
-log_items$duration_uploading <- log_items$end_time_uploading - log_items$end_time_scraping
-log_items$total_time <- log_items$end_time_uploading - log_items$start_time
+log_items$duration_scraping <- duration_in_mins(log_items$end_time_scraping,log_items$start_time)
+log_items$duration_uploading <- duration_in_mins(log_items$end_time_uploading,log_items$end_time_scraping)
+log_items$total_time <- duration_in_mins(log_items$end_time_uploading,log_items$start_time)
 
 # Upload logs to bigquery
 upload_log_to_bigquery(
