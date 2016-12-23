@@ -18,18 +18,12 @@ try(testthat::test_dir("../tests/testthat/"))
 #### Settings #### 
 
 settings <- list(
-  search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
-  # mpscraper settings
-  ads_per_minute = 120, # limit download rate to prevent being blocked by hammering marktplaats server
-  report_every_nth_scrape = 100, # how chatty do you want to be
-  number_of_tries = 3, # in case of connection time-outs
-  scrape_interval = 3, # interval between two scrapes, in hours
   # BigQuery settings
   project = "polynomial-coda-151914",
   bq_dataset = "mplaats_ads", 
   bq_table = "all_ads",
   bq_logs = "logs",
-  batch_size = 1000
+  bq_settings = "settings"
 )
 
 #### Logging ####
@@ -40,7 +34,16 @@ log_items <- list(
 # Initialize bigquery dataset
 initialize_bigquery_dataset(project = settings$project, bq_dataset = settings$bq_dataset,bq_table = settings$bq_table)
 
-# Get all open ads from google bigquery TODO
+# Download scrape settings
+scrape_settings <- get_settings_from_bigquery(
+  project = settings$project,
+  bq_dataset = settings$bq_dataset,
+  bq_table = settings$bq_settings
+)
+# Combine all settings
+settings <- c(settings,as.list(scrape_settings))
+
+# Get all open ads from google bigquery
 open_ads <- get_ads_from_bigquery(
   project = settings$project,
   bq_dataset = settings$bq_dataset,
