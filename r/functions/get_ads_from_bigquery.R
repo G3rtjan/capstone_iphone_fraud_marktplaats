@@ -40,7 +40,7 @@ get_ads_from_bigquery <- function(project,bq_dataset,bq_table,method = c("all", 
         max(closed) as closed,
         max(time_retrieved) as last_scrape
       FROM [%s:%s.%s]
-      GROUP BY ad_id)ads
+      GROUP BY ad_id) ads
     
     WHERE 1=1
     %s
