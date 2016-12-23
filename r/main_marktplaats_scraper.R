@@ -17,8 +17,8 @@ try(testthat::test_dir("../tests/testthat/"))
 
 #### Settings #### 
 
+# BigQuery settings
 settings <- list(
-  # BigQuery settings
   project = "polynomial-coda-151914",
   bq_dataset = "mplaats_ads", 
   bq_table = "all_ads",
@@ -26,13 +26,33 @@ settings <- list(
   bq_settings = "settings"
 )
 
+# Initialize bigquery dataset
+initialize_bigquery_dataset(project = settings$project, bq_dataset = settings$bq_dataset,bq_table = settings$bq_table)
+
+# Enable reset of scrape settings
+if(FALSE) {
+  # Reset scrape settings
+  reset_settings_in_bigquery(
+    project = settings$project, 
+    bq_dataset = settings$bq_dataset, 
+    bq_table = settings$bq_settings,
+    new_scrape_settings = list(
+      # mpscraper settings
+      search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
+      ads_per_minute = 120, # limit download rate to prevent being blocked by hammering marktplaats server
+      report_every_nth_scrape = 100, # how chatty do you want to be
+      number_of_tries = 3, # in case of connection time-outs
+      scrape_interval = 3, # interval between two scrapes, in hours
+      # BigQuery settings
+      batch_size = 1000
+    )
+  )
+}
+
 #### Logging ####
 log_items <- list(
   start_time = Sys.time()
 )
-
-# Initialize bigquery dataset
-initialize_bigquery_dataset(project = settings$project, bq_dataset = settings$bq_dataset,bq_table = settings$bq_table)
 
 # Download scrape settings
 scrape_settings <- get_settings_from_bigquery(

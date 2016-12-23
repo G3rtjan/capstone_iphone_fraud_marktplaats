@@ -1,5 +1,5 @@
 
-# Function to get a list of advertisements from bigquery, with defined filtering method applied
+# Function to get scraping settings from bigquery
 get_settings_from_bigquery <- function(project,bq_dataset,bq_table) {
   
   # Stop if dataset not exists
