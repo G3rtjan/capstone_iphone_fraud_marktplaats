@@ -16,10 +16,9 @@ purrr::walk(list.files("functions", full.names = T), source)
 try(testthat::test_dir("../tests/testthat/"))
 
 #### Settings #### 
-
 # BigQuery settings
 settings <- list(
-  project = "polynomial-coda-151914",
+  project = "capstoneprojectgt",
   bq_dataset = "mplaats_ads", 
   bq_table = "all_ads",
   bq_logs = "logs",
@@ -27,8 +26,13 @@ settings <- list(
 )
 
 # Initialize bigquery dataset
-initialize_bigquery_dataset(project = settings$project, bq_dataset = settings$bq_dataset,bq_table = settings$bq_table)
+initialize_bigquery_dataset(
+  project = settings$project, 
+  bq_dataset = settings$bq_dataset,
+  bq_table = settings$bq_table
+)
 
+#### Reset Settings ####
 # Enable reset of scrape settings
 if(FALSE) {
   # Reset scrape settings
@@ -39,10 +43,10 @@ if(FALSE) {
     new_scrape_settings = list(
       # mpscraper settings
       search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
-      ads_per_minute = 120, # limit download rate to prevent being blocked by hammering marktplaats server
+      ads_per_minute = 100, # limit download rate to prevent being blocked by hammering marktplaats server
       report_every_nth_scrape = 100, # how chatty do you want to be
       number_of_tries = 3, # in case of connection time-outs
-      scrape_interval = 3, # interval between two scrapes, in hours
+      scrape_interval = 4, # interval between two scrapes, in hours
       # BigQuery settings
       batch_size = 1000
     )
@@ -60,6 +64,7 @@ scrape_settings <- get_settings_from_bigquery(
   bq_dataset = settings$bq_dataset,
   bq_table = settings$bq_settings
 )
+
 # Combine all settings
 settings <- c(settings,as.list(scrape_settings))
 
@@ -103,9 +108,8 @@ upload_ads_to_bigquery(
   batch_size = settings$batch_size
 )
 
-duration_in_mins <- function(start,end) paste0(round(as.numeric(difftime(start,end,units="mins")),1),' minutes')
-
 # Add log items
+duration_in_mins <- function(start,end) paste0(round(as.numeric(difftime(start,end,units="mins")),1),' minutes')
 log_items$end_time_uploading <- Sys.time()
 log_items$duration_scraping <- duration_in_mins(log_items$end_time_scraping,log_items$start_time)
 log_items$duration_uploading <- duration_in_mins(log_items$end_time_uploading,log_items$end_time_scraping)

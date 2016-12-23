@@ -43,8 +43,9 @@ get_ads_from_bigquery <- function(project,bq_dataset,bq_table,method = c("all", 
       GROUP BY ad_id) ads
     
     WHERE 1=1
-    %s
-    %s
+      %s
+      %s
+    ORDER BY last_scrape asc
   ",project,bq_dataset,bq_table,closed_filter,interval_filter)
   
   # Query bq_table and return results
