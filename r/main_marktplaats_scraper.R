@@ -73,8 +73,7 @@ open_ads <- get_ads_from_bigquery(
   project = settings$project,
   bq_dataset = settings$bq_dataset,
   bq_table = settings$bq_table,
-  method = "open",
-  scrape_interval_h = settings$scrape_interval
+  method = "open"
 )
 
 # Get all currently listed ads from marktplaats
@@ -85,8 +84,9 @@ listed_ads <- list_advertisements(
 
 # Determine which ads to scrape, and scrape 'em!
 scraped_ads <- determine_ads_to_scrape(
-    ads_listed = listed_ads$ad_id, 
-    ads_seen = open_ads
+    ads_listed = listed_ads, 
+    ads_seen = open_ads,
+    scrape_interval_h = settings$scrape_interval
   ) %>% 
   scrape_ads(
     ads_per_minute = settings$ads_per_minute,
