@@ -1,14 +1,21 @@
 
 # Function to get a list of advertisements from bigquery, with defined filtering method applied
-get_ads_from_bigquery <- function(project,bq_dataset,bq_table,method = c("all", "open", "closed")) {
+get_ads_from_bigquery <- function(project,bq_dataset,bq_table,method = c("all", "open", "closed"),scrape_interval_h = numeric()) {
 
   # Determine filtering based on method
   method <- match.arg(method)
-  where_filter <- switch(method,
+  closed_filter <- switch(method,
          all = "",
-         open = "WHERE closed = 0",
-         closed = "WHERE closed = 1")
+         open = "AND closed = 0",
+         closed = "AND closed = 1")
   
+  # Determine filtering based on scrape interval
+  interval_filter <- ifelse(
+    is.numeric(scrape_interval_h) & length(scrape_interval_h) > 0,
+    paste0("AND ROUND((CURRENT_TIMESTAMP() - last_scrape)/1000000/3600,2) >= ",scrape_interval_h),
+    ""
+  )
+
   # Stop if dataset not exists
   if(!bq_dataset %in% bigrquery::list_datasets(project)) {
     stop(paste0("BigQuery dataset '",bq_dataset,"' does not exist!"))
@@ -23,17 +30,22 @@ get_ads_from_bigquery <- function(project,bq_dataset,bq_table,method = c("all", 
   # Define query
   query <- sprintf("
     SELECT
-      ad_id
+      ad_id,
+      closed,
+      last_scrape
     FROM
     
       (SELECT 
         ad_id,
-        max(closed) as closed
+        max(closed) as closed,
+        max(time_retrieved) as last_scrape
       FROM [%s:%s.%s]
       GROUP BY ad_id)ads
     
+    WHERE 1=1
     %s
-  ",project,bq_dataset,bq_table,where_filter)
+    %s
+  ",project,bq_dataset,bq_table,closed_filter,interval_filter)
   
   # Query bq_table and return results
   bq_data <- bigrquery::query_exec(

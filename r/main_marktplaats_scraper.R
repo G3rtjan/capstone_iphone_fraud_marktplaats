@@ -23,6 +23,7 @@ settings <- list(
   ads_per_minute = 120, # limit download rate to prevent being blocked by hammering marktplaats server
   report_every_nth_scrape = 100, # how chatty do you want to be
   number_of_tries = 3, # in case of connection time-outs
+  scrape_interval = 3, # interval between two scrapes, in hours
   # BigQuery settings
   project = "polynomial-coda-151914",
   bq_dataset = "mplaats_ads", 
@@ -44,7 +45,8 @@ open_ads <- get_ads_from_bigquery(
   project = settings$project,
   bq_dataset = settings$bq_dataset,
   bq_table = settings$bq_table,
-  method = "open"
+  method = "open",
+  scrape_interval_h = settings$scrape_interval
 )
 
 # Get all currently listed ads from marktplaats
