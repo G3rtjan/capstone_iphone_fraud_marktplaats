@@ -43,10 +43,10 @@ if(FALSE) {
     new_scrape_settings = list(
       # mpscraper settings
       search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
-      ads_per_minute = 100, # limit download rate to prevent being blocked by hammering marktplaats server
+      ads_per_minute = 300, # limit download rate to prevent being blocked by hammering marktplaats server
       report_every_nth_scrape = 100, # how chatty do you want to be
       number_of_tries = 3, # in case of connection time-outs
-      scrape_interval = 4, # interval between two scrapes, in hours
+      scrape_interval = 3, # interval between two scrapes, in hours
       # BigQuery settings
       batch_size = 1000
     )
