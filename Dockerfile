@@ -3,7 +3,7 @@ FROM rocker/hadleyverse
 MAINTAINER https://github.com/G3rtjan
 
 # install additional R packages
-RUN R -e "install.packages(c('devtools', 'bigrquery', 'selectr'), repos='https://cran.rstudio.com/')"
+RUN R -e "install.packages(c('devtools', 'bigrquery', 'googleCloudStorageR', 'selectr'), repos='https://cran.rstudio.com/')"
 
 # add code in folder /code
 ADD r /r
