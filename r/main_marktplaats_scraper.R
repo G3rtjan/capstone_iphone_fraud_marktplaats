@@ -7,18 +7,23 @@
 # Details https://github.com/G3rtjan/capstone_iphone_fraud_marktplaats
 
 
-#### SETUP ####
-devtools::install_github("timvink/mpscraper") # not installed in the docker container yet
+#### Setup ####
+devtools::install_github("timvink/mpscraper",ref="production") # not installed in the docker container yet
 library(mpscraper)
 library(magrittr)
 
 purrr::walk(list.files("functions", full.names = T), source)
 try(testthat::test_dir("../tests/testthat/"))
 
+
 #### Settings #### 
-# BigQuery settings
+# Google Cloud settings
 settings <- list(
   project = "capstoneprojectgt",
+  # Cloud Storage settings
+  scope = "https://www.googleapis.com/auth/devstorage.full_control",
+  imageDir = "mpimages",
+  # BigQuery settings
   bq_dataset = "mplaats_ads", 
   bq_table = "all_ads",
   bq_logs = "logs",
@@ -31,6 +36,16 @@ initialize_bigquery_dataset(
   bq_dataset = settings$bq_dataset,
   bq_table = settings$bq_table
 )
+
+# Download scrape settings
+scrape_settings <- get_settings_from_bigquery(
+  project = settings$project,
+  bq_dataset = settings$bq_dataset,
+  bq_table = settings$bq_settings
+)
+# Combine all settings
+settings <- c(settings,as.list(scrape_settings))
+
 
 #### Reset Settings ####
 # Enable reset of scrape settings
@@ -53,21 +68,14 @@ if(FALSE) {
   )
 }
 
-#### Logging ####
+
+#### Start logging ####
 log_items <- list(
   start_time = Sys.time()
 )
 
-# Download scrape settings
-scrape_settings <- get_settings_from_bigquery(
-  project = settings$project,
-  bq_dataset = settings$bq_dataset,
-  bq_table = settings$bq_settings
-)
 
-# Combine all settings
-settings <- c(settings,as.list(scrape_settings))
-
+#### Scrape ad info ####
 # Get all open ads from google bigquery
 open_ads <- get_ads_from_bigquery(
   project = settings$project,
@@ -97,8 +105,12 @@ scraped_ads <- determine_ads_to_scrape(
 # Add log items
 log_items$n_rows_scraped <- nrow(scraped_ads)
 log_items$n_cols_scraped <- ncol(scraped_ads)
+log_items$n_new_ads <- sum(!scraped_ads$ad_id %in% open_ads$ad_id)
+log_items$n_existing_ads <- sum(scraped_ads$ad_id %in% open_ads$ad_id)
 log_items$end_time_scraping <- Sys.time()
-  
+
+
+#### Upload ad info results ####
 # Upload scraped ads to bigquery
 upload_ads_to_bigquery(
   scraped_ads = scraped_ads,
@@ -109,12 +121,69 @@ upload_ads_to_bigquery(
 )
 
 # Add log items
-duration_in_mins <- function(start,end) paste0(round(as.numeric(difftime(start,end,units="mins")),1),' minutes')
 log_items$end_time_uploading <- Sys.time()
+
+
+#### Determine ad images to scrape ####
+# Set scope
+options(googleAuthR.scopes.selected = c(settings$scope))
+# Authentication
+googleCloudStorageR::gcs_auth()
+# Get bucket and bucket info
+bucket <- googleCloudStorageR::gcs_list_buckets(settings$project)
+bucket_info <- googleCloudStorageR::gcs_get_bucket(bucket$name)
+# Get bucket objects
+#objects <- googleCloudStorageR::gcs_list_objects(bucket$name) # NOT CORRECTLY IMPLEMENTED, LIMITED TO 1000 RESULTS!
+objects <- get_add_images_from_gcloud(
+  bucket_name = bucket$name,
+  prefix = settings$imageDir
+)
+
+# Create filter for images which have already been collected
+gathered_images <- data.frame(name = objects) %>%
+  dplyr::filter(grepl(settings$imageDir,name)) %>% 
+  dplyr::mutate(ad_id = as.character(stringr::str_extract(name,'[am][0-9]{1,10}'))) %>% 
+  dplyr::filter(grepl("[mM|aA][0-9]{9}", ad_id)) %>% 
+  dplyr::select(ad_id) %>% 
+  dplyr::distinct(.keep_all = T)
+
+# Get ads to collect images for
+ads_with_images <- get_ads_with_images(
+  project = settings$project,
+  bq_dataset = settings$bq_dataset,
+  bq_table = settings$bq_table
+)
+# Apply filter
+ads_to_get_images_for <- ads_with_images[!ads_with_images %in% gathered_images$ad_id]
+
+# Add log items
+log_items$n_new_ads_with_images <- length(ads_to_get_images_for)
+
+
+#### Scrape and upload ad images ####
+dir.create(settings$imageDir)
+# Scrape and upload all images
+list(
+  ad_id = ads_to_get_images_for,
+  file_path = settings$imageDir,
+  bucket_name = bucket$name
+) %>% 
+  purrr::pwalk(upload_ad_images_to_gcloud)
+
+# Add log items
+log_items$n_new_images <- length(list.files(settings$imageDir))
+log_items$end_time_uploading_images <- Sys.time()
+duration_in_mins <- function(start,end) paste0(round(as.numeric(difftime(start,end,units="mins")),1),' minutes')
 log_items$duration_scraping <- duration_in_mins(log_items$end_time_scraping,log_items$start_time)
 log_items$duration_uploading <- duration_in_mins(log_items$end_time_uploading,log_items$end_time_scraping)
-log_items$total_time <- duration_in_mins(log_items$end_time_uploading,log_items$start_time)
+log_items$duration_uploading_images <- duration_in_mins(log_items$end_time_uploading_images,log_items$end_time_uploading)
+log_items$total_time <- duration_in_mins(log_items$end_time_uploading_images,log_items$start_time)
 
+# Cleanup
+unlink(settings$imageDir, recursive=TRUE)
+
+
+#### Upload logs ####
 # Upload logs to bigquery
 upload_log_to_bigquery(
   logs = data.frame(log_items),

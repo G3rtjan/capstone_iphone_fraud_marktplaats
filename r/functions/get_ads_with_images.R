@@ -21,7 +21,7 @@ get_ads_with_images <- function(project,bq_dataset,bq_table) {
     
       (SELECT 
         ad_id,
-        max(number_of_photos) as n_images,
+        min(number_of_photos) as n_images,
         max(closed) as closed
       FROM [%s:%s.%s]
       GROUP BY ad_id) ads
