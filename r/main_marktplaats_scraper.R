@@ -58,10 +58,10 @@ if(FALSE) {
     new_scrape_settings = list(
       # mpscraper settings
       search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
-      ads_per_minute = 300, # limit download rate to prevent being blocked by hammering marktplaats server
+      ads_per_minute = 500, # limit download rate to prevent being blocked by hammering marktplaats server
       report_every_nth_scrape = 100, # how chatty do you want to be
       number_of_tries = 3, # in case of connection time-outs
-      scrape_interval = 3, # interval between two scrapes, in hours
+      scrape_interval = 4, # interval between two scrapes, in hours
       # BigQuery settings
       batch_size = 1000
     )
@@ -90,17 +90,38 @@ listed_ads <- list_advertisements(
   advertisement_type = "individuals" #,max_pages = 3
 )
 
-# Determine which ads to scrape, and scrape 'em!
-scraped_ads <- determine_ads_to_scrape(
-    ads_listed = listed_ads, 
-    ads_seen = open_ads,
-    scrape_interval_h = settings$scrape_interval
-  ) %>% 
-  scrape_ads(
+# Determine which ads to scrape
+ads_to_scrape <- determine_ads_to_scrape(
+  ads_listed = listed_ads, 
+  ads_seen = open_ads,
+  scrape_interval_h = settings$scrape_interval
+)
+
+# Create batches
+batches <- split(ads_to_scrape, ceiling(seq_along(ads_to_scrape)/settings$batch_size))
+# Create empty results table
+scraped_ads <- data.frame()
+
+# Scrape and upload them per batch
+for(batch in batches) {
+  # Scrape batch of ads
+  scraped <- scrape_ads(
+    ad_ids = batch,
     ads_per_minute = settings$ads_per_minute,
     report_every_nth_scrape = settings$report_every_nth_scrape,
     number_of_tries = settings$number_of_tries
   )
+  # Upload batch of scraped ads to bigquery
+  upload_ads_to_bigquery(
+    scraped_ads = scraped,
+    project = settings$project,
+    bq_dataset = settings$bq_dataset,
+    bq_table = settings$bq_table,
+    batch_size = settings$batch_size
+  )
+  # Add them to total set
+  scraped_ads <- dplyr::bind_rows(scraped_ads,scraped)
+}
 
 # Add log items
 log_items$n_rows_scraped <- nrow(scraped_ads)
@@ -108,20 +129,6 @@ log_items$n_cols_scraped <- ncol(scraped_ads)
 log_items$n_new_ads <- sum(!scraped_ads$ad_id %in% open_ads$ad_id)
 log_items$n_existing_ads <- sum(scraped_ads$ad_id %in% open_ads$ad_id)
 log_items$end_time_scraping <- Sys.time()
-
-
-#### Upload ad info results ####
-# Upload scraped ads to bigquery
-upload_ads_to_bigquery(
-  scraped_ads = scraped_ads,
-  project = settings$project,
-  bq_dataset = settings$bq_dataset,
-  bq_table = settings$bq_table,
-  batch_size = settings$batch_size
-)
-
-# Add log items
-log_items$end_time_uploading <- Sys.time()
 
 
 #### Determine ad images to scrape ####
@@ -175,8 +182,7 @@ log_items$n_new_images <- length(list.files(settings$imageDir))
 log_items$end_time_uploading_images <- Sys.time()
 duration_in_mins <- function(start,end) paste0(round(as.numeric(difftime(start,end,units="mins")),1),' minutes')
 log_items$duration_scraping <- duration_in_mins(log_items$end_time_scraping,log_items$start_time)
-log_items$duration_uploading <- duration_in_mins(log_items$end_time_uploading,log_items$end_time_scraping)
-log_items$duration_uploading_images <- duration_in_mins(log_items$end_time_uploading_images,log_items$end_time_uploading)
+log_items$duration_uploading_images <- duration_in_mins(log_items$end_time_uploading_images,log_items$end_time_scraping)
 log_items$total_time <- duration_in_mins(log_items$end_time_uploading_images,log_items$start_time)
 
 # Cleanup
