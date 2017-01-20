@@ -104,9 +104,20 @@ scraped_ads <- data.frame()
 
 # Scrape and upload them per batch
 for(batch in batches) {
+  # Get all open ads from google bigquery
+  to_scrape <- get_ads_from_bigquery(
+      project = settings$project,
+      bq_dataset = settings$bq_dataset,
+      bq_table = settings$bq_table,
+      method = "open"
+    ) %>% 
+    dplyr::filter(ad_id %in% batch) %>% 
+    dplyr::mutate(time_since_last_scrape = difftime(Sys.time(),last_scrape,units="hours")) %>% 
+    dplyr::filter(time_since_last_scrape >= settings$scrape_interval) %>% 
+    dplyr::arrange(-time_since_last_scrape)
   # Scrape batch of ads
   scraped <- scrape_ads(
-    ad_ids = batch,
+    ad_ids = to_scrape$ad_id,
     ads_per_minute = settings$ads_per_minute,
     report_every_nth_scrape = settings$report_every_nth_scrape,
     number_of_tries = settings$number_of_tries
