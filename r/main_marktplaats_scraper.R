@@ -58,12 +58,12 @@ if(FALSE) {
     new_scrape_settings = list(
       # mpscraper settings
       search_url = "http://www.marktplaats.nl/z/telecommunicatie/mobiele-telefoons-apple-iphone/iphone.html?query=iphone&categoryId=1953&sortBy=SortIndex",
-      ads_per_minute = 500, # limit download rate to prevent being blocked by hammering marktplaats server
+      ads_per_minute = 300, # limit download rate to prevent being blocked by hammering marktplaats server
       report_every_nth_scrape = 100, # how chatty do you want to be
       number_of_tries = 3, # in case of connection time-outs
       scrape_interval = 4, # interval between two scrapes, in hours
       # BigQuery settings
-      batch_size = 1000
+      batch_size = 100
     )
   )
 }
@@ -85,10 +85,14 @@ open_ads <- get_ads_from_bigquery(
 )
 
 # Get all currently listed ads from marktplaats
-listed_ads <- list_advertisements(
-  url = settings$search_url,
-  advertisement_type = "individuals" #,max_pages = 3
-)
+tryCatch(expr = {
+  listed_ads <- list_advertisements(
+    url = settings$search_url,
+    advertisement_type = "individuals" #,max_pages = 3
+  )
+},finally = {
+  listed_ads <- data.frame(ad_id = open_ads$ad_id[1])
+})
 
 # Determine which ads to scrape
 ads_to_scrape <- determine_ads_to_scrape(
@@ -104,34 +108,38 @@ scraped_ads <- data.frame()
 
 # Scrape and upload them per batch
 for(batch in batches) {
-  # Get all open ads from google bigquery
-  to_scrape <- get_ads_from_bigquery(
+  try({
+    # Get all open ads from google bigquery
+    to_scrape <- get_ads_from_bigquery(
       project = settings$project,
       bq_dataset = settings$bq_dataset,
       bq_table = settings$bq_table,
       method = "open"
     ) %>% 
-    dplyr::filter(ad_id %in% batch) %>% 
-    dplyr::mutate(time_since_last_scrape = difftime(Sys.time(),last_scrape,units="hours")) %>% 
-    dplyr::filter(time_since_last_scrape >= settings$scrape_interval) %>% 
-    dplyr::arrange(-time_since_last_scrape)
-  # Scrape batch of ads
-  scraped <- scrape_ads(
-    ad_ids = to_scrape$ad_id,
-    ads_per_minute = settings$ads_per_minute,
-    report_every_nth_scrape = settings$report_every_nth_scrape,
-    number_of_tries = settings$number_of_tries
-  )
-  # Upload batch of scraped ads to bigquery
-  upload_ads_to_bigquery(
-    scraped_ads = scraped,
-    project = settings$project,
-    bq_dataset = settings$bq_dataset,
-    bq_table = settings$bq_table,
-    batch_size = settings$batch_size
-  )
-  # Add them to total set
-  scraped_ads <- dplyr::bind_rows(scraped_ads,scraped)
+      dplyr::filter(ad_id %in% batch) %>% 
+      dplyr::mutate(time_since_last_scrape = difftime(Sys.time(),last_scrape,units="hours")) %>% 
+      dplyr::filter(time_since_last_scrape >= settings$scrape_interval) %>% 
+      dplyr::arrange(-time_since_last_scrape)
+    # Scrape batch of ads
+    if(dim(to_scrape)[1] > 0) {
+      scraped <- scrape_ads(
+        ad_ids = to_scrape$ad_id,
+        ads_per_minute = settings$ads_per_minute,
+        report_every_nth_scrape = settings$report_every_nth_scrape,
+        number_of_tries = settings$number_of_tries
+      )
+      # Upload batch of scraped ads to bigquery
+      upload_ads_to_bigquery(
+        scraped_ads = scraped,
+        project = settings$project,
+        bq_dataset = settings$bq_dataset,
+        bq_table = settings$bq_table,
+        batch_size = settings$batch_size
+      )
+      # Add them to total set
+      scraped_ads <- dplyr::bind_rows(scraped_ads,scraped)
+    }
+  })
 }
 
 # Add log items
