@@ -17,8 +17,8 @@ reset_settings_in_bigquery <- function(project,bq_dataset,bq_table,new_scrape_se
   }
   
   # Wait a few seconds for the table to be removed
-  Sys.sleep(30)
-  
+  Sys.sleep(10)
+
   # Upload new settings
   bigrquery::insert_upload_job(
     project = project, 
