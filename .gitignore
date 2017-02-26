@@ -6,3 +6,6 @@
 .RData
 .html
 .httr-oauth
+data/
+data/*
+.DS_Store
