@@ -11,6 +11,7 @@
 
   # install gsutils https://cloud.google.com/storage/docs/gsutil_install
   # download to capstone_iphone_fraud_marktplaats/data folder with these bash commands:
+  # NOTE: first cd to capstone_iphone_fraud_marktplaats location!
   # gsutil -m cp -R gs://eu.artifacts.capstoneprojectgt.appspot.com/mpdata data
   # gsutil -m cp -R gs://eu.artifacts.capstoneprojectgt.appspot.com/mpimages data
 
@@ -20,6 +21,8 @@ library(googleAuthR)
 library(googleCloudStorageR)
 library(tidyverse)
 library(OpenImageR)
+devtools::install_github("timvink/mpscraper",ref = "master") # not installed in the docker container yet
+library(mpscraper)
 
 purrr::walk(list.files("functions", full.names = T), source)
 
@@ -35,17 +38,41 @@ writeRDS(image_hash_table, "data/image_hash_table.RData")
 
 # merchant data
 # Get all adds data
-all_adds <- readRDS("../data/full_mp_data.RData")
+all_adds <- readRDS("../data/mpdata/full_mp_data.RData")
 
 # Get all unique merchants with n open adds (or indication 'Removed')
 all_merchants <- all_adds %>% 
   dplyr::select(cp_id,counterparty) %>% 
   dplyr::distinct(.keep_all = T) %>% 
-  dplyr::arrange(cp_id,counterparty) %>% 
-  dplyr::rowwise() %>% 
-  dplyr::mutate(n_ads = get_n_current_advs_of_merchant(cp_id))
+  dplyr::arrange(cp_id,counterparty)
 
+# Create empty results tibble
+removed_merchants <- tibble::tibble()
+# Loop per 100 merchants
+for (i in 1:nrow(all_merchants)) {
+  merchant <- all_merchants[i,]
+  removed <- get_n_current_advs_of_merchant(merchant$cp_id)
+  if (removed == "Removed") {
+    cat(paste0("\nMerchant number ",i," has been ",removed))
+  } else {
+    cat(paste0("\nMerchant number ",i," has ",removed," ads"))
+  }
+  removed_merchants <- dplyr::bind_rows(
+    removed_merchants,
+    merchant %>% 
+      dplyr::mutate(n_ads = removed)
+  )
+}
 
+# Add to all_adds data
+all_adds_extended <- dplyr::inner_join(
+    x = all_adds,
+    y = removed_merchants,
+    by = c("cp_id","counterparty")
+  ) %>% 
+  dplyr::arrange(cp_id,ad_id,time_retrieved)
 
+# Save new file
+saveRDS(all_adds_extended, "../data/mpdata/full_mp_data.RData")
 
 
