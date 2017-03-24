@@ -31,8 +31,20 @@ purrr::walk(list.files("functions", full.names = T), source)
 # image hash map
 i <- 0 # for printing
 image_hash_table <- list.files("../data/mpimages", full.names = T) %>% 
-  purrr::map_df(hash_image)
-writeRDS(image_hash_table, "data/image_hash_table.RData")
+  purrr::map_df(hash_image) %>% 
+  dplyr::mutate(
+    ad_id = gsub("_.*","",image),
+    image_nr = image %>% 
+      gsub(".*_","",.) %>% 
+      gsub("\\..*","",.) %>% 
+      as.numeric()
+  ) %>% 
+  dplyr::group_by(hash) %>% 
+  dplyr::mutate(n_ads_with_same_image = length(unique(ad_id))) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(ad_id,image_nr)
+saveRDS(image_hash_table, "../data/mpdata/image_hash_table.RData")
+
 
 # ads data 
 
