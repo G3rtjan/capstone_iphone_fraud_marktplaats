@@ -29,7 +29,7 @@ purrr::walk(list.files("functions", full.names = T), source)
 i <- 0 # for printing
 image_hash_table <- list.files("../data/mpimages", full.names = T) %>% 
   purrr::map_df(hash_image)
-writeRDS(image_hash_table, "data/image_hash_table.RData")
+saveRDS(image_hash_table, "../data/image_hash_table.RData")
 
 # ads data 
 
