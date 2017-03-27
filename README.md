@@ -59,3 +59,12 @@ We have build a custom R Package with a marktplaats scraper. The [marktplaats AP
 + After some time, you can check if the container has written data to [Google BigQuery](https://bigquery.cloud.google.com/dataset/capstoneprojectgt:mplaats_ads)
 + To remove the container, run: 
 	+ `gcloud container clusters delete mpscraper`
+
+
+### Todo
+
+- describe data collections proces
+- describe different project folders
+- describe shiny app
+- do outlier detection
+- update this README

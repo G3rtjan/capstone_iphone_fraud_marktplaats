@@ -86,6 +86,7 @@ all_scrape_dates[['scrape_date']] %>%
 # Combine all add data in single RData file
 dir(path = settings$storage_dir, pattern = ".RData", full.names = T) %>% 
   purrr::map_df(readRDS) %>% 
+  dplyr::distinct(.keep_all = T) %>% 
   saveRDS(file = file.path(settings$storage_dir,"full_mp_data.RData"))
 
 
