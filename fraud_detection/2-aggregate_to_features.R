@@ -39,20 +39,26 @@ feature_pricing <- agg_mp %>%
   left_join(model_prices, by = c("model")) %>% 
   mutate(rel_price = highest_price / avg_price) %>% 
   select(-n, -model, -avg_price, -highest_price)
+training <- training %>% 
+  left_join(feature_pricing, by = "ad_id") %>% 
+  mutate(rel_price = if_else(is.na(rel_price), 1, rel_price))
 
-training <- left_join(training, feature_pricing, by = "ad_id")
-  
 # phone number list in ad description? 
 feature_phone_nbr <- full_mp %>% 
   group_by(ad_id) %>% 
   summarize(has_phone_nbr = any(!is.na(cp_tel_number)))
-training <- left_join(training, feature_phone_nbr, by = "ad_id")
-  
+training <- training %>% 
+  left_join(feature_phone_nbr, by = "ad_id") %>% 
+  mutate(has_phone_nbr = if_else(is.na(has_phone_nbr), F, has_phone_nbr))
+
+
 # Number of ads of merchant ?
 feature_n_ads <- full_mp %>% 
   group_by(ad_id) %>% 
   summarise(cp_n_of_advs = max(cp_n_of_advs))
-training <- left_join(training, feature_n_ads, by = "ad_id")
+training <- training %>% 
+  left_join(feature_n_ads, by = "ad_id") %>% 
+  mutate(cp_n_of_advs = if_else(is.na(cp_n_of_advs), 1, cp_n_of_advs))
 
 # relative age of merchant ?
 full_mp %>% 
@@ -63,7 +69,9 @@ full_mp %>%
 feature_cp_age <- full_mp %>% 
   group_by(ad_id) %>% 
   summarize(rel_cp_age = max(cp_age) / 5.61109)
-training <- left_join(training, feature_cp_age, by = "ad_id")
+training <- training %>% 
+  left_join(feature_cp_age, by = "ad_id") %>% 
+  mutate(rel_cp_age = if_else(is.na(rel_cp_age), 1, rel_cp_age))
 
 # uniqueness of ad photos? 
 hashes %>% 
@@ -71,7 +79,17 @@ hashes %>%
   summarise(n_ads_same = n_distinct(ad_id)) %>% 
   arrange(desc(n_ads_same))
   
-hashes %>% 
-  dplyr::filter(hash == "552ec1c06bf2379c")
+feature_img_reuse <- hashes %>% 
+  dplyr::filter(!is.na(hash)) %>% 
+  group_by(ad_id) %>% 
+  summarise(img_reuse = min(n_ads_with_same_image))# %>% 
+  #ungroup() %>% 
+  #mutate(img_uniqueness = log(img_uniqueness))
+training <- training %>% 
+  left_join(feature_img_reuse, by = "ad_id") %>% 
+  mutate(img_reuse = if_else(is.na(img_reuse), 1L, img_reuse))
+
+
+
 
 
