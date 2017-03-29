@@ -61,6 +61,17 @@ training <- training %>%
   left_join(feature_n_ads, by = "ad_id") %>% 
   tidyr::replace_na(list(cp_n_of_advs = 1))
 
+# Number of name changes of merchant
+feature_n_name_changes <- full_mp %>% 
+  group_by(cp_id) %>% 
+  summarise(cp_n_name_changes = n_distinct(counterparty)) %>% 
+  left_join(full_mp, by = "cp_id") %>% 
+  group_by(ad_id) %>% 
+  summarise(cp_n_name_changes = max(cp_n_name_changes))
+training <- training %>% 
+  left_join(feature_n_name_changes, by = "ad_id") %>% 
+  tidyr::replace_na(list(cp_n_name_changes = 1))
+
 # relative age of merchant ?
 feature_cp_age <- full_mp %>% 
   group_by(ad_id) %>% 
@@ -83,6 +94,18 @@ feature_img_reuse <- hashes %>%
 training <- training %>% 
   left_join(feature_img_reuse, by = "ad_id") %>% 
   mutate(img_reuse = tidyr::replace_na(list(img_reuse = 0)))
+
+# Add label of removed
+label_removed <- full_mp %>% 
+  mutate(is_removed = ifelse(n_ads == "Removed", 1, 0)) %>% 
+  group_by(cp_id) %>% 
+  summarise(is_removed = max(is_removed)) %>% 
+  left_join(full_mp, by = "cp_id") %>% 
+  group_by(ad_id) %>% 
+  summarise(is_removed = max(is_removed))
+training <- training %>% 
+  left_join(label_removed, by = "ad_id") %>% 
+  tidyr::replace_na(list(is_removed = 0))
 
 training
 
