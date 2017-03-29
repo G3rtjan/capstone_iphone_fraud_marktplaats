@@ -38,10 +38,12 @@ feature_pricing <- agg_mp %>%
   select(ad_id, model, highest_price) %>% 
   left_join(model_prices, by = c("model")) %>% 
   mutate(rel_price = highest_price / avg_price) %>% 
-  select(-n, -model, -avg_price, -highest_price)
+  mutate(underpricedness = ifelse(rel_price < 1, 1 - rel_price, 0)) %>% 
+  select(-n, -model, -avg_price, -highest_price, -rel_price)
+
 training <- training %>% 
   left_join(feature_pricing, by = "ad_id") %>% 
-  mutate(rel_price = if_else(is.na(rel_price), 1, rel_price))
+  tidyr::replace_na(list(underpricedness = 0))
 
 # phone number list in ad description? 
 feature_phone_nbr <- full_mp %>% 
@@ -49,8 +51,7 @@ feature_phone_nbr <- full_mp %>%
   summarize(has_phone_nbr = any(!is.na(cp_tel_number)))
 training <- training %>% 
   left_join(feature_phone_nbr, by = "ad_id") %>% 
-  mutate(has_phone_nbr = if_else(is.na(has_phone_nbr), F, has_phone_nbr))
-
+  mutate(has_phone_nbr = if_else(is.na(has_phone_nbr) | has_phone_nbr == F, 0L, 1L))
 
 # Number of ads of merchant ?
 feature_n_ads <- full_mp %>% 
@@ -58,38 +59,37 @@ feature_n_ads <- full_mp %>%
   summarise(cp_n_of_advs = max(cp_n_of_advs))
 training <- training %>% 
   left_join(feature_n_ads, by = "ad_id") %>% 
-  mutate(cp_n_of_advs = if_else(is.na(cp_n_of_advs), 1, cp_n_of_advs))
+  tidyr::replace_na(list(cp_n_of_advs = 1))
 
 # relative age of merchant ?
-full_mp %>% 
-  group_by(cp_id) %>% 
-  summarize(cp_age = max(cp_age)) %>% 
-  ungroup() %>% 
-  summarize(mean(cp_age))
 feature_cp_age <- full_mp %>% 
   group_by(ad_id) %>% 
-  summarize(rel_cp_age = max(cp_age) / 5.61109)
+  summarize(cp_age = max(cp_age)) %>% 
+  ungroup() %>% 
+  mutate(rel_cp_age = scale(cp_age)) %>% 
+  mutate(merchant_youngness = -1 * rel_cp_age)
 training <- training %>% 
   left_join(feature_cp_age, by = "ad_id") %>% 
-  mutate(rel_cp_age = if_else(is.na(rel_cp_age), 1, rel_cp_age))
+  select(-cp_age, -rel_cp_age) %>% 
+  tidyr::replace_na(list(merchant_youngness = 0))
 
 # uniqueness of ad photos? 
-hashes %>% 
-  group_by(hash) %>% 
-  summarise(n_ads_same = n_distinct(ad_id)) %>% 
-  arrange(desc(n_ads_same))
-  
 feature_img_reuse <- hashes %>% 
   dplyr::filter(!is.na(hash)) %>% 
   group_by(ad_id) %>% 
-  summarise(img_reuse = min(n_ads_with_same_image))# %>% 
-  #ungroup() %>% 
-  #mutate(img_uniqueness = log(img_uniqueness))
+  summarise(img_reuse = min(n_ads_with_same_image)) %>% 
+  ungroup() %>% 
+  mutate(img_reuse = log(img_reuse))
 training <- training %>% 
   left_join(feature_img_reuse, by = "ad_id") %>% 
-  mutate(img_reuse = if_else(is.na(img_reuse), 1L, img_reuse))
+  mutate(img_reuse = tidyr::replace_na(list(img_reuse = 0)))
 
+training
 
+# scaling
+pre_proc_scaling_model <- caret::preProcess(training, method = c("center", "scale")) 
+readr::write_rds(pre_proc_scaling_model, "../data/model/pre_proc_scaling_model.RData")
+train_scaled <- predict(pre_proc_scaling_model, training)
 
-
+train_scaled
 
