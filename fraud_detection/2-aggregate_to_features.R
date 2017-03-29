@@ -82,11 +82,23 @@ feature_img_reuse <- hashes %>%
   mutate(img_reuse = log(img_reuse))
 training <- training %>% 
   left_join(feature_img_reuse, by = "ad_id") %>% 
-  mutate(img_reuse = tidyr::replace_na(list(img_reuse = 0)))
+  tidyr::replace_na(list(img_reuse = 0))
 
-training
+# contact details included in description?
+feature_mentions_contact <- full_mp %>% 
+  group_by(ad_id) %>% 
+  filter(time_retrieved == max(time_retrieved)) %>% 
+  ungroup() %>% 
+  transmute(ad_id, 
+            mentions_contactdetails = 
+              grepl("whatapp|bellen|sms|bericht|mail|contact", description))
 
-# scaling
+training <- training %>% 
+  left_join(feature_mentions_contact, by = "ad_id") %>% 
+  tidyr::replace_na(list(mentions_contactdetails = 0))
+
+
+#### scaling ####
 pre_proc_scaling_model <- caret::preProcess(training, method = c("center", "scale")) 
 readr::write_rds(pre_proc_scaling_model, "../data/model/pre_proc_scaling_model.RData")
 train_scaled <- predict(pre_proc_scaling_model, training)
