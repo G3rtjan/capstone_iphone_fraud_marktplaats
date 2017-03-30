@@ -1,5 +1,6 @@
 
 library(tidyverse)
+library(caret)
 source("functions/extract_price.R")
 source("functions/extract_age.R")
 
@@ -96,17 +97,23 @@ training <- training %>%
   tidyr::replace_na(list(img_reuse = 0))
 
 # contact details included in description?
-feature_mentions_contact <- full_mp %>% 
+features_text_based <- full_mp %>% 
   group_by(ad_id) %>% 
   filter(time_retrieved == max(time_retrieved)) %>% 
   ungroup() %>% 
   transmute(ad_id, 
+            is_shipping = 
+              grepl("verzenden", description, ignore.case = T),
             mentions_contactdetails = 
-              grepl("whatapp|bellen|sms|bericht|mail|contact", description))
+              grepl("whatapp|bellen|sms|bericht|mail|contact", description, ignore.case = T),
+            mentions_company = 
+              grepl("KVK|koophandel|openingstijden", description, ignore.case = T)
+            )
 
 training <- training %>% 
-  left_join(feature_mentions_contact, by = "ad_id") %>% 
-  tidyr::replace_na(list(mentions_contactdetails = 0))
+  left_join(features_text_based, by = "ad_id") %>% 
+  tidyr::replace_na(list(mentions_contactdetails = 0,
+                         mentions_company = 0))
 
 # Add label of removed
 label_removed <- full_mp %>% 
@@ -123,7 +130,12 @@ training <- training %>%
 training
 
 #### scaling ####
-pre_proc_scaling_model <- caret::preProcess(training, method = c("center", "scale")) 
+pre_proc_scaling_model <- caret::preProcess(training %>% 
+                                              select(-has_phone_nbr,
+                                                     -mentions_contactdetails,
+                                                     -mentions_company,
+                                                     -is_removed), 
+                                            method = c("center", "scale")) 
 readr::write_rds(pre_proc_scaling_model, "../data/model/pre_proc_scaling_model.RData")
 train_scaled <- predict(pre_proc_scaling_model, training)
 

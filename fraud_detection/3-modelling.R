@@ -4,23 +4,44 @@
 
 weighted_features_model <- function(data) {
   
-  # clean 
-  data <- data %>% 
-    mutate(rel_price = 1 - rel_price) %>%  #because lower price is more suspicious
-    mutate(has_phone_nbr = ifelse(has_phone_nbr, 1L, 0L)) %>% 
-    mutate(rel_cp_age = 1 - rel_cp_age) # younger is more suspicious 
-  
-  preProcValues <- caret::preProcess(data, method = c("center", "scale")) 
-  trainTransformed <- predict(preProcValues, data)
-  
-  trainTransformed %>%
-    mutate(p = 1 * rel_price + 0.5 * has_phone_nbr + 
-             1.2 * cp_n_of_advs + 1 * rel_cp_age + 
-             1.2 * img_reuse)
+  data %>%
+    mutate(score = 1 * underpricedness + 0.5 * has_phone_nbr + 
+             2 * cp_n_of_advs + 3 * cp_n_name_changes + 
+             2 * img_reuse + 1 * mentions_contactdetails +
+             4 * is_removed)
 }
 
+# manual check: sucks! 
+weighted_features_model(train_scaled) %>% 
+  arrange(desc(score)) %>% View
 
-weighted_features_model(training) %>% 
-  arrange(desc(p))
+weighted_features_model(train_scaled) %>% 
+  filter(is_removed == 1) %>% 
+  arrange(desc(score)) %>% View
 
-# m1127811227
+
+#### ML model approach #### 
+
+library(xgboost)
+xgboost::xgb.train()
+
+train_scaled <- train_scaled %>% 
+  filter(mentions_company == 0)
+
+xg_model <- xgboost(data = train_scaled %>% select(-ad_id, -is_removed) %>% data.matrix(), 
+                     label = train_scaled %>% select(is_removed) %>% data.matrix, 
+                     max.depth = 3, eta = 1, nthread = 3, nround = 10, 
+                     objective = "binary:logistic")
+  
+pred <- predict(xg_model,  train_scaled %>% select(-ad_id, -is_removed)%>% data.matrix())
+
+result <- train_scaled %>% mutate(p = pred)
+result %>% 
+  arrange(desc(p)) %>% View
+
+importance_matrix <- xgb.importance(model = xg_model)
+print(importance_matrix)
+xgb.plot.importance(importance_matrix = importance_matrix)
+
+# size of the prediction vector
+print(length(pred))
