@@ -40,6 +40,12 @@ all_images <- dir(
 
 #### TRANSFORM DATA ####
 
+# Add additonal columns to ads info
+all_ads_info <- all_ads_info %>% 
+  dplyr::mutate(
+    counterparty_is_removed = ifelse(n_ads == "Removed", "Yes", "No")
+  )
+
 # Create overview of ads
 ads_overview <- all_ads_info %>% 
   dplyr::select(ad_id,counterparty,cp_id) %>% 

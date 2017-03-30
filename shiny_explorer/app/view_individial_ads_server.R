@@ -169,7 +169,8 @@ output$IAV_ad_general_info <- renderTable(
       "number_of_favorites",
       "displayed_since",
       "counterparty",
-      "cp_id"
+      "cp_id",
+      "counterparty_is_removed"
     ),
     header = "General info"
   ),
