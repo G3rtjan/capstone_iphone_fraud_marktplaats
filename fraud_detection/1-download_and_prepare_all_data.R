@@ -256,7 +256,10 @@ image_hash_table <- image_hash_table
       as.numeric()
   ) %>% 
   dplyr::group_by(hash) %>% 
-  dplyr::mutate(n_ads_with_same_image = length(unique(ad_id))) %>% 
+  dplyr::mutate(
+    n_ads_with_same_image = length(unique(ad_id)),
+    n_cps_with_same_image = length(unique(cp_id))
+  ) %>% 
   dplyr::ungroup() %>% 
   dplyr::arrange(ad_id,image_nr)
 
