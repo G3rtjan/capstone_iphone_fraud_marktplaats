@@ -1,6 +1,7 @@
 
 # Dependency
 library(shiny)
+library(shinythemes)
 
 # Function that defines the shiny server
 shinyServer(function(input, output, session) {

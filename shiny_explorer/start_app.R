@@ -1,57 +1,25 @@
 
-# Dependencies
+#### SETUP ####
+
+# NOTE: You need to set the working directory to the location of this script!
+
+# Load packages
 library(magrittr)
-library(shinythemes)
 
-#### HELPER FUNCTIONS ####
-
-extract_price <- function(price) {
-  price %>% 
-    gsub("[a-zA-Z]|.* ","",.) %>% 
-    gsub(",",".",.) %>% 
-    as.numeric() %>% 
-    invisible() %>% 
-    return()
-}
-collapse_unique <- function(values) {
-  values %>% 
-    unique() %>% 
-    na.omit() %>% 
-    paste0(collapse = " /&/ ") %>% 
-    return()
-}
-filter_cp <- function(all_ads, cp) {
-  all_ads %>% 
-    dplyr::filter(cp_id == cp) %>% 
-    return()
-}
-filter_ad <- function(all_ads, ad) {
-  all_ads %>% 
-    dplyr::filter(ad_id == ad) %>% 
-    return()
-}
-display_elements <- function(ads_info, elements = c(), in_euro = c(), header = "element") {
-  format_as_euro <- scales::dollar_format(prefix = "") # EURO: prefix = "\u20ac "
-  ads_info %>% 
-    dplyr::select_(.dots = elements) %>% 
-    tidyr::gather("element","value",convert = T) %>% 
-    dplyr::rowwise() %>% 
-    dplyr::mutate(
-      value = as.character(ifelse(element %in% in_euro & !is.na(value), paste(format_as_euro(as.numeric(value)),"euro"), value)),
-      value = ifelse(is.na(value), "", value),
-      element = gsub("_"," ",element)
-    ) %>% 
-    dplyr::rename_(.dots = setNames(c("element","value"), c(header," "))) %>% 
-    dplyr::ungroup() %>% 
-    return()
-}
+# Load local functions from /functions folder
+purrr::walk(list.files("functions", full.names = T), source)
 
 
-#### LOAD AND TRANSFORM DATA ####
+#### LOAD DATA ####
 
 # Get all adds data
-all_ads <- readRDS("../data/mpdata/full_mp_data.RData") %>% 
-  dplyr::filter(!is.na(ad_id) & !is.na(cp_id) & !is.na(displayed_since))
+all_ads <- readRDS("../data/mpdata/full_mp_data.RData")
+
+# Read descriptions data
+all_ads_texts <- readRDS(file = "../data/mpdata/text_mp_data.RData")
+
+# Read aggregated ads data
+all_ads_info <- readRDS(file = "../data/mpdata/agg_mp_data.RData")
 
 # List all images
 all_images <- dir(
@@ -60,6 +28,7 @@ all_images <- dir(
   ) %>% 
   tibble::tibble(file_path = .) %>%
   dplyr::mutate(
+    file_path = paste0("../",file_path),
     ad_id = basename(file_path) %>% 
       gsub("_.*","",.),
     image_nr = basename(file_path) %>% 
@@ -68,24 +37,8 @@ all_images <- dir(
       as.numeric()
   )
 
-# Get all ad texts
-all_ads_texts <- all_ads %>%
-  dplyr::select(cp_id,ad_id,description,time_retrieved) %>%
-  dplyr::group_by(cp_id,ad_id,description) %>% 
-  dplyr::summarise(
-    from = min(time_retrieved, na.rm = T),
-    to = max(time_retrieved, na.rm = T)
-  ) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::arrange(cp_id,ad_id,from) %>% 
-  # Fixate date formats
-  dplyr::mutate(
-    from = as.character(from),
-    to = as.character(to)
-  )
 
-# Read aggregated ads data
-all_ads_info <- readRDS(file = "../data/mpdata/agg_mp_data.RData")
+#### TRANSFORM DATA ####
 
 # Create overview of ads
 ads_overview <- all_ads_info %>% 
@@ -116,6 +69,6 @@ global_vars <- list(
 )
 
 # Run the app
-shiny::runApp(getwd(),launch.browser = T)
+shiny::runApp("app",launch.browser = T)
 
 
