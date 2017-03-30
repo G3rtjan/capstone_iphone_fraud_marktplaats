@@ -215,6 +215,28 @@ all_ads_info <- all_adds_extended %>%
 saveRDS(all_ads_info, "../data/mpdata/agg_mp_data.RData")
 
 
+#### Store descriptions data separately ####
+
+# Get all ad texts
+all_ads_texts <- all_adds_extended %>%
+  dplyr::select(cp_id,ad_id,description,time_retrieved) %>%
+  dplyr::group_by(cp_id,ad_id,description) %>% 
+  dplyr::summarise(
+    from = min(time_retrieved, na.rm = T),
+    to = max(time_retrieved, na.rm = T)
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(cp_id,ad_id,from) %>% 
+  # Fixate date formats
+  dplyr::mutate(
+    from = as.character(from),
+    to = as.character(to)
+  )
+
+# Save aggregated data
+saveRDS(all_ads_texts, "../data/mpdata/text_mp_data.RData")
+
+
 #### Create image hashing table ####
 
 # For printing progress
