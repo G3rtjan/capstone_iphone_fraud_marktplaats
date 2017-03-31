@@ -1,4 +1,23 @@
 
+#### Hypotheses/assumptions for Fraud ####
+
+## Label for (potential) fraud:
+# - merchant does not exist anymore (account has been removed)
+
+## Filtering for fraud:
+# - merchant is not a company
+# - shipping method contains 'Verzenden'
+
+## Features for fraud detection:
+# - number of name changes of merchant
+# - merchant account is younger than average merchant account
+# - uniqueness of ad photos that are used
+# - underpriced iphone
+# - merchant has contact information (phone number)
+# - ad description asks to contact by sms/whatsapp/email
+# - average number of ads the merchants has open
+
+
 #### SETUP ####
 
 # NOTE: You need to set the working directory to the location of this script!
@@ -59,24 +78,6 @@ hashes <- full_mp %>%
 
 
 #### CREATE TRAINING DATA ####
-
-### Hypotheses/assumptions for Fraud:
-
-## Label for (potential) fraud:
-# - merchant does not exist anymore (account has been removed)
-
-## Filtering for fraud:
-# - merchant is not a company
-# - shipping method contains 'Verzenden'
-
-## Features for fraud detection:
-# - number of name changes of merchant
-# - merchant account is younger than average merchant account
-# - uniqueness of ad photos that are used
-# - underpriced iphone
-# - merchant has contact information (phone number)
-# - ad description asks to contact by sms/whatsapp/email
-# - average number of ads the merchants has open
 
 # Create label of (potential) fraud
 label_cp_is_removed <- full_mp %>% 

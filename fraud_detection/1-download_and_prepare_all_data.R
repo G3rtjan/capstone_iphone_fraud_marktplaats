@@ -26,9 +26,6 @@ library(magrittr)
 # Load local functions from /functions folder
 purrr::walk(list.files("functions", full.names = T), source)
 
-# Run test scripts
-try(testthat::test_dir("../tests/testthat/"))
-
 
 #### Settings #### 
 # Google Cloud settings
@@ -76,7 +73,7 @@ download_ads_scraped_on_date <- function(scrape_date, storage_dir, closed_ads, o
   file_path <- file.path(storage_dir,paste0("mp_data_scraped_on_",gsub("-","",scrape_date),".RData"))
   # Only download if required
   if (overwrite | !file.exists(file_path)) {
-    cat(paste0("\n",format(Sys.time(), "%H:%M:%S"),": Downloading data for scrape date: ",scrape_date))
+    cat(paste0("\n",format(Sys.time(), "%H:%M:%S"),": Downloading data for scrape date: ",scrape_date,"\n"))
     data <- bigrquery::query_exec(
       query = sprintf(
         "SELECT * FROM [%s:%s.%s] WHERE DATE(time_retrieved) = '%s'",
@@ -104,7 +101,7 @@ all_scrape_dates[['scrape_date']] %>%
   )
 
 # Combine all add data in single RData file
-all_adds <- dir(path = tempdir(), pattern = ".RData", full.names = T) %>% 
+all_adds <- dir(path = tempdir(), pattern = "mp_data_scraped_on_", full.names = T) %>% 
   purrr::map_df(readRDS) %>% 
   dplyr::distinct(.keep_all = T) %>% 
   dplyr::filter(!is.na(ad_id) & !is.na(cp_id) & !is.na(displayed_since))
@@ -243,10 +240,10 @@ saveRDS(all_ads_texts, "../data/mpdata/text_mp_data.RData")
 i <- 0
 
 # List all images
-image_hash_table <- list.files("../data/mpimages", full.names = T) %>% 
+image_hash_table <- list.files("../data/mpimages", full.names = T)
 
 # Create image hash table
-image_hash_table <- image_hash_table
+image_hash_table <- image_hash_table %>% 
   purrr::map_df(hash_image) %>% 
   dplyr::mutate(
     ad_id = gsub("_.*","",image),
@@ -255,12 +252,6 @@ image_hash_table <- image_hash_table
       gsub("\\..*","",.) %>% 
       as.numeric()
   ) %>% 
-  dplyr::group_by(hash) %>% 
-  dplyr::mutate(
-    n_ads_with_same_image = length(unique(ad_id)),
-    n_cps_with_same_image = length(unique(cp_id))
-  ) %>% 
-  dplyr::ungroup() %>% 
   dplyr::arrange(ad_id,image_nr)
 
 # Save image hash table

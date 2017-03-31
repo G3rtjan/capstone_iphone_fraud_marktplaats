@@ -5,7 +5,7 @@ hash_image <- function(path) {
   i <<- i + 1
   
   hash <- tryCatch({
-    phash(rgb_2gray(jpeg::readJPEG(path)), 
+    OpenImageR::phash(OpenImageR::rgb_2gray(jpeg::readJPEG(path)), 
           hash_size = 8, 
           highfreq_factor = 4, 
           MODE = 'hash', 
