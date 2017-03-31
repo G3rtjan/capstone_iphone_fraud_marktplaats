@@ -97,11 +97,11 @@ Because many ads are not online on Marktplaats anymore, we built a custom shiny 
 The web app displays the data we have collected on a certain ad or merchant, as well as
 the corresponding ads.
 
-![fraudulent ad](data/img/feature_imp.png)
+![feature importance](man/feature_imp.png)
 
 ### Results
 
 We were able to use the tools we built to identify fraudulent ads. One example is a merchant that has multiple ads with the same text and images, but kept changing his name (id stays constant).
 
-![fraudulent ad](data/img/fraud_ad1.png)
-![fraudulent ad](data/img/fraud_ad2.png)
+![fraudulent ad1](man/fraud_ad1.png)
+![fraudulent ad2](man/fraud_ad2.png)
