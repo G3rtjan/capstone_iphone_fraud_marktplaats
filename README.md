@@ -70,8 +70,9 @@ If you want to run the mpscraper docker image on the google cloud, you can follo
 ### Data preparation
 
 We ran the scraper for ±2 months and collected 2.680.047 snapshots of 91.562 unique ads, and 275.027 pictures of iPhones.
-In the folder `/fraud_detection` we download and aggregate this data into features that can detect fraud. Some features suspected to indicate fraud:
+In `/fraud_detection/1-download_and_prepare_all_data.R` we download this data and in `/fraud_detection/2-aggregate_to_features.R` we aggregate this data into features that can detect fraud. 
 
+Some features suspected to indicate fraud:
 - number of name changes of merchant
 - merchant account is younger than average merchant account
 - uniqueness of ad photos that are used
@@ -82,6 +83,13 @@ In the folder `/fraud_detection` we download and aggregate this data into featur
 
 The images we hashed using a phash algoritm. By using a map between ad_id and the image hashes use, we were able to identify features such as scoring how unique the most unique foto of an ad is.
 
+If you want to save some time, you can skip running the `/fraud_detection/1-download_and_prepare_all_data.R` script by running the following lines of code (which will download the results from this script):
++ Install [gsutils](https://cloud.google.com/storage/docs/gsutil_install)
++ Download data from Google Cloud to your local `capstone_iphone_fraud_marktplaats` folder with these bash commands (don't forget to cd to this folder first!):
+	+ `gsutil -m cp -R gs://eu.artifacts.capstoneprojectgt.appspot.com/mpdata data`
++ If you also want to see the images that we scraped, you also need to run (and then wait for a few hours):
+	+ `gsutil -m cp -R gs://eu.artifacts.capstoneprojectgt.appspot.com/mpimages data`
+
 ### Modeling
 
 In `/fraud_detection/3-modelling.R` we have tried two different approaches to recognize fraud:
@@ -91,17 +99,24 @@ In `/fraud_detection/3-modelling.R` we have tried two different approaches to re
 
 The latter approach worked best when do a manual evaluation by viewing different ads.  
 
-### Viewing ads
-
-Because many ads are not online on Marktplaats anymore, we built a custom shiny app in R.
-The web app displays the data we have collected on a certain ad or merchant, as well as
-the corresponding ads.
+Below you can find the feature importance of the final XGBOOST model, which we use to detect fraud in new iPhone ads:
 
 ![feature importance](man/feature_imp.png)
 
-### Results
+### Viewing ads
 
-We were able to use the tools we built to identify fraudulent ads. One example is a merchant that has multiple ads with the same text and images, but kept changing his name (id stays constant).
+Because many ads are not online on Marktplaats anymore, we built a custom shiny app in R which is called Marktplaats iPhone Fraud Explorer (MIFE).
+You can start the MIFE app by running the `/shiny_explorer/start_app.R` script (after finishing the Data preparation and Modelling steps above).
+
+The MIFE app contains a tab called 'Training Ads Viewer', which displays the data we have collected on a certain ad or merchant as well as the images (if you have downloaded them).
+
+Using the MIFE app, we were able to identify fraudulent ads. One example is a merchant that has multiple ads with the same text and images, but kept changing his name (while the merchant id stayed constant).
 
 ![fraudulent ad1](man/fraud_ad.png)
 ![fraudulent ad2](man/fraud_ad_two.png)
+
+The MIFE app also contains a second tab called 'Scrape New Ads Viewer', which can be used to scrape currently available iPhone ads from Marktplaats and give them a fraud score (see the red circle below) using the model we developed:
+
+![new scraped ad](man/new_scraped_ad.png)
+
+
