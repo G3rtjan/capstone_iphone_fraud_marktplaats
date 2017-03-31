@@ -127,12 +127,9 @@ training <- training %>%
 # Add feature about merchant account youngness
 feature_cp_youngness <- full_mp %>% 
   dplyr::group_by(ad_id) %>% 
-  dplyr::summarize(cp_age = max(cp_age)) %>% 
-  dplyr::ungroup() %>% 
-  dplyr::mutate(merchant_youngness = -scale(cp_age))
+  dplyr::summarize(merchant_youngness = -max(cp_age))
 training <- training %>% 
   dplyr::left_join(feature_cp_youngness, by = "ad_id") %>% 
-  dplyr::select(-cp_age) %>% 
   tidyr::replace_na(list(merchant_youngness = 0))
 
 # Add feature about uniqueness of ad photos that are used
