@@ -103,5 +103,5 @@ the corresponding ads.
 
 We were able to use the tools we built to identify fraudulent ads. One example is a merchant that has multiple ads with the same text and images, but kept changing his name (id stays constant).
 
-![fraudulent ad1](man/fraud_ad1.png)
-![fraudulent ad2](man/fraud_ad2.png)
+![fraudulent ad1](man/fraud_ad.png)
+![fraudulent ad2](man/fraud_ad_two.png)
