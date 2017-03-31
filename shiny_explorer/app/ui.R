@@ -4,7 +4,7 @@ css <- "
 .shiny-output-error { visibility: hidden; }
 .shiny-output-error:before {
   visibility: visible;
-  content: 'An error occurred! You can restart the app and try again, or if this error occurs frequently then please contact one of the developers...'; }
+  content: 'Please wait a few seconds...'; }
 }
 "
 # Define button style
@@ -24,8 +24,15 @@ shinyUI(fluidPage(theme = shinythemes::shinytheme("united"),
              
     # Name of the first tab
     tabPanel(
-      title = "Individual Ads Viewer",
-      source('view_individial_ads_ui.R', local = T)[1],
+      title = "Training Ads Viewer",
+      source('view_training_ads_ui.R', local = T)[1],
+      icon = icon("bullseye")
+    ),
+    
+    # Name of the first tab
+    tabPanel(
+      title = "Scrape New Ads Viewer",
+      source('view_scrape_new_ads_ui.R', local = T)[1],
       icon = icon("search")
     )
     
