@@ -39,7 +39,7 @@ agg_mp <- readRDS("../data/mpdata/agg_mp_data.RData")
 
 # Read image hashes
 hashes <- readRDS("../data/mpdata/image_hash_table.RData")
-  
+
 
 #### DATA TRANSFORMATION ####
 
@@ -68,13 +68,6 @@ full_mp <- model_prices %>%
     y = .,
     by = "model_type"
   )
-
-# Add merchant id to image hash data
-hashes <- full_mp %>% 
-  dplyr::select(ad_id,cp_id) %>% 
-  dplyr::distinct(.keep_all = T) %>% 
-  dplyr::inner_join(hashes, by = "ad_id") %>% 
-  dplyr::filter(!is.na(hash))
 
 
 #### CREATE TRAINING DATA ####
@@ -230,5 +223,8 @@ if (!dir.exists("../data/model")) {
 
 # Store training data
 saveRDS(training, "../data/model/training_data.RData")
+
+# Save mean model prices
+saveRDS(model_prices, "../data/model/mean_model_prices.RData")
 
 

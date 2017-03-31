@@ -254,6 +254,14 @@ image_hash_table <- image_hash_table %>%
   ) %>% 
   dplyr::arrange(ad_id,image_nr)
 
+# Add merchant id to image hash data
+image_hash_table <- all_adds_extended %>% 
+  dplyr::select(ad_id,cp_id) %>% 
+  dplyr::distinct(.keep_all = T) %>% 
+  dplyr::inner_join(image_hash_table, by = "ad_id") %>% 
+  dplyr::filter(!is.na(hash))
+
+
 # Save image hash table
 saveRDS(image_hash_table, "../data/mpdata/image_hash_table.RData")
 
